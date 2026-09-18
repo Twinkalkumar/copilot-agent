@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-agent
+  labels:
+    app: copilot-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: copilot-agent
+  template:
+    metadata:
+      labels:
+        app: copilot-agent
+    spec:
+      containers:
+        - name: copilot-agent
+          image: ghcr.io/twinkalkumar/copilot-agent:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: copilot-agent
+  labels:
+    app: copilot-agent
+spec:
+  selector:
+    app: copilot-agent
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
